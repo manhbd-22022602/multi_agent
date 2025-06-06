@@ -1,0 +1,5 @@
+langchain_community
+langgraph
+python-dotenv
+langgraph-checkpoint-mongodb
+pymongo
