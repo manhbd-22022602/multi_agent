@@ -1,9 +1,9 @@
 AVAILABLE_AGENTS = {
-    "PM Agent": "pm_agent",
-    "Dev Agent": "dev_agent",
-    "QA Agent": "qa_agent",
-    "Doc Agent": "docu_agent",
-    "Report Agent": "report_agent",
+    "PM Agent": "pm",
+    "Dev Agent": "dev",
+    "QA Agent": "qa",
+    "Doc Agent": "docu",
+    "Report Agent": "report",
 }
 
 LLM = "gemini-2.0-flash"
