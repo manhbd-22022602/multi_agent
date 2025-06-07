@@ -19,7 +19,7 @@ dependencies = [
   "langgraph-checkpoint-mongodb",
   "pymongo",
   "langchain-mcp-adapters",
-  "click==7.1.2",
+  "click==8.1.7",
   "langchain-google-genai",
   "streamlit",
   "langchain_ollama",
