@@ -1,47 +1,111 @@
+# 💼 Multi‑Agent Project Automation System
+
+> **Tự động hoá vòng đời tác vụ trong dự án IT** bằng LangGraph, Streamlit và các MCP (Model Context Protocol) Server.
+>
+> • Gán & theo dõi task • Phát triển • Kiểm thử • Sinh tài liệu • Báo cáo cuối ngày  — tất cả do các *agent* đảm nhận.
+
+---
+
+## 📐 Kiến trúc tổng quan
+
+```
+Streamlit UI  ─►  Router  ─►  LangGraph  ─►  Agents
+                              │              ├─ Host (Q&A chung)
+                              │              ├─ PM (Supervisor)
+                              │              ├─ Dev (Implementation)
+                              │              ├─ QA (Testing)
+                              │              ├─ Doc (Documentation)
+                              │              └─ Report (Daily report)
+                              └─  MCP Tools (GitHub, Jira, …)
+```
+
+* **UI (app/)**: Dropdown cho phép chọn chế độ *Auto* hoặc từng agent.
+* **LangGraph (agents/** & **graph/)**: Xây đồ thị trạng thái, điều phối luồng công việc.
+* **MCP Servers (services/** & **docker/)**: Kết nối GitHub / Atlassian qua chuẩn MCP để gọi API an toàn.
+
+---
+
+## 🗂️ Cấu trúc thư mục
+
 ```
 project/
-├── app/                          # App chính (nơi chạy Streamlit UI)
-│   ├── __init__.py
-│   ├── main.py                   # File chạy Streamlit (streamlit run app/main.py)
-│   └── pages/                    # Nếu dùng nhiều page trong Streamlit
-│       └── dashboard.py
-│
-├── agents/                       # Định nghĩa các Agent dùng trong LangGraph
-│   ├── __init__.py
-│   ├── host.py            # Auto-mode, Q&A chung
-│   ├── project_manager.py # Supervisor (PM)
-│   ├── developer.py       # Dev-Agent
-│   ├── qa.py              # QA-Agent
-│   ├── docu.py            # Doc-Agent
-│   └── report.py          # Báo cáo cuối ngày
-│
-├── graph/                        # Logic xây dựng và compile LangGraph
-│   ├── __init__.py
-│   ├── nodes.py                  # Các node function
-│   ├── edges.py                  # Nếu tách riêng edge logic
-│   ├── state.py                  # Định nghĩa State (TypedDict hoặc BaseModel)
-│   └── build_graph.py            # Tạo và compile graph
-│
-├── data/                         # Data mẫu, cấu hình, mô phỏng DB
-│   └── sample_tasks.json
-│
-├── services/                     # Các dịch vụ phụ trợ (DB, API, xử lý I/O...)
-│   ├── __init__.py
-│   ├── task_manager.py
-│   ├── github_mcp.py             # Mã khởi tạo MCP + load tools GitHub
-│   └── atlassian_mcp.py          # Mã khởi tạo MCP + load tools Atlassian
-│
-├── utils/                        # Tiện ích chung (formatting, validation, logs,...)
-│   ├── __init__.py
-│   └── helpers.py
-│
-├── configs/                      # Cấu hình hệ thống (API key, env, graph setup,...)
-│   └── settings.py
-│
-├── tests/                        # Unit test, integration test
-│   └── test_graph.py
-│
-├── requirements.txt              # Thư viện cần cài
-├── README.md                     # Tài liệu mô tả dự án
-└── .env                          # Biến môi trường (nếu cần)
+├── app/               # Streamlit UI
+├── agents/            # Mỗi agent nằm trong sub‑package riêng
+│   ├── Dev/
+│   ├── Doc/
+│   ├── Host/
+│   ├── PM/
+│   ├── QA/
+│   └── Report/
+├── graph/             # Node, Edge, State, build_graph.py
+├── services/          # Kết nối MCP & logic phụ trợ
+│   ├── github_mcp.py
+│   ├── atlassian_mcp.py
+│   └── task_manager.py
+├── configs/           # settings.py, load .env
+├── data/              # sample_tasks.json, mock DB
+├── docker/            # docker-compose & YAML cho MCP servers
+├── tests/             # PyTest suites
+├── requirements.txt
+├── README.md          # (file này)
+└── .env               # Biến môi trường
 ```
+
+## 🚀 Cài đặt nhanh
+
+```bash
+# 1) Clone repo
+$ git clone https://github.com/<you>/multi_agent.git && cd multi_agent
+
+# 2) Tạo virtualenv & cài phụ thuộc
+$ python -m venv .venv && source .venv/bin/activate
+$ pip install -r requirements.txt  # hoặc poetry install
+
+# 3) Tạo file .env
+$ cp .env.example .env  # rồi điền API keys
+```
+
+---
+
+## 🐳 Khởi chạy MCP Servers
+
+```bash
+# GitHub MCP (stdio mode)
+$ docker compose -f docker/github_mcp.yml up -d
+
+# Atlassian MCP (Jira / Confluence)
+$ docker run -d --env-file mcp-atlassian.env -p 8405:80 mcp/atlassian:latest
+```
+
+Mỗi server expose endpoint `/mcp` để client trong `services/` tự động lấy *tools*.
+
+---
+
+## 🏃‍♂️ Chạy ứng dụng
+
+```bash
+# Trong virtualenv đã kích hoạt
+$ streamlit run app/main.py
+```
+
+Truy cập `http://localhost:8501` ➜ chọn **Auto** để để hệ thống tự phối hợp tất cả agents, hoặc chọn cụ thể **PM / Dev / QA …** tuỳ ngữ cảnh.
+
+---
+
+## 🧪 Test & CI
+
+```bash
+# Unit + integration tests
+$ pytest -q tests/
+```
+
+• *Chưa* cấu hình CI – bạn có thể thêm GitHub Actions tuỳ ý.
+
+---
+
+## 🔧 Tuỳ chỉnh & mở rộng
+
+* **Thêm Agent mới**: tạo sub‑folder trong `agents/`, implement logic & đăng ký node vào `graph/build_graph.py`.
+* **Thay LLM**: chỉnh `configs/settings.py` – hỗ trợ OpenAI, Gemma, v.v.
+* **DB thực**: thay mock JSON bằng PostgreSQL / MongoDB qua `services/task_manager.py`.
+

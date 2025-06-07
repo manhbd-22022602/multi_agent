@@ -1,9 +1,9 @@
-from .host import HostAgent
-from .project_manager import ProjectManagerAgent
-from .developer import DeveloperAgent
-from .qa import QAAgent
-from .docu import DocumentationAgent
-from .report import ReportAgent
+from .Host.host import HostAgent
+from .PM.project_manager import ProjectManagerAgent
+from .Dev.developer import DeveloperAgent
+from .QA.qa import QAAgent
+from .Doc.docu import DocumentationAgent
+from .Report.report import ReportAgent
 
 __all__ = [
     'HostAgent',
