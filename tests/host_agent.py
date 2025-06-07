@@ -1,5 +1,5 @@
 import asyncio
-from agents.graph.core_graph import graph_router
+from agents.master.core_graph import graph_router
 
 async def test_host_agent():
     # TEST 1: Forced routing to 'dev'

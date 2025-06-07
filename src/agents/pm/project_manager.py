@@ -3,20 +3,15 @@ from __future__ import annotations
 import datetime as _dt
 from typing import Any, Dict, List, TypedDict
 
-from agents.Dev import developer as _dev_agent
-from agents.Doc import docu as _doc_agent
-from agents.QA import qa as _qa_agent
-from configs.settings import LLM
+from agents.dev import developer as _dev_agent
+from agents.docu import docu as _doc_agent
+from agents.qa import qa as _qa_agent
+from configs.config_loader import llm_local as LLM
 from services.atlassian_mcp import load_atlassian_tools
-
-# LLM selection (reuse helper from host if preferred)
-if LLM.startswith("gemini"):
-    from langchain_google_genai import ChatGoogleGenerativeAI as _ChatLLM
-
 from langchain.schema import HumanMessage, SystemMessage
 
 # (Optional) – import sub‑agents lazily when needed
-from agents.Report import report as _rep_agent
+from agents.report import report as _rep_agent
 
 _PM_SYSTEM_PROMPT = (
     "Bạn là **Project‑Manager Agent** trong hệ thống quản lý dự án tự động. "
@@ -46,7 +41,7 @@ class ProjectManagerAgent:
 
     def __init__(self) -> None:
         self.name = "Project Manager"
-        self.llm = _ChatLLM(model=LLM, temperature=0)
+        self.llm = LLM
         self.tools = None  # Will be initialized in setup()
 
     async def setup(self) -> None:

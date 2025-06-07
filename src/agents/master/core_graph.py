@@ -1,12 +1,12 @@
 # graph/core_graph.py
 from typing import TypedDict, Literal, Optional
 from langgraph.graph import StateGraph, START, END
-from agents.Dev import developer
-from agents.Doc import docu
-from agents.Host import host
-from agents.PM import project_manager
-from agents.QA import qa
-from agents.Report import report
+from agents.dev import developer
+from agents.docu import docu
+from agents.host import host
+from agents.pm import project_manager
+from agents.qa import qa
+from agents.report import report
 
 # Khai báo State
 class ChatState(TypedDict, total=False):
