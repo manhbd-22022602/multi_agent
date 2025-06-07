@@ -22,11 +22,11 @@ def build_core_graph():
 
     # Node IDs phải trùng khoá trong ChatState["next"]
     g.add_node("host",   host.run)
-    g.add_node("pm",     project_manager.run)
-    g.add_node("dev",    developer.run)
-    g.add_node("qa",     qa.run)
-    g.add_node("docu",   docu.run)
-    g.add_node("report", report.run)
+    # g.add_node("pm",     project_manager.run)
+    # g.add_node("dev",    developer.run)
+    # g.add_node("qa",     qa.run)
+    # g.add_node("docu",   docu.run)
+    # g.add_node("report", report.run)
 
     # Edges
     g.add_edge(START, "host")        # luôn bắt đầu ở Host
@@ -36,24 +36,25 @@ def build_core_graph():
         "host",
         lambda s: s.get("next", "end"),
         {
-            "pm": "pm",
-            "dev": "dev",
-            "qa": "qa",
-            "docu": "docu",
-            "report": "report",
+            # "pm": "pm",
+            # "dev": "dev",
+            # "qa": "qa",
+            # "docu": "docu",
+            # "report": "report",
             "end": END,      # Host tự chốt câu trả lời
         },
     )
 
-    for leaf in ["pm", "dev", "qa", "docu", "report"]:
-        g.add_edge(leaf, END)
+    # for leaf in ["pm", "dev", "qa", "docu", "report"]:
+        # g.add_edge(leaf, END)
 
     return g.compile()
 
 GRAPH = build_core_graph()
 
-# Router gọi graph bên phía Streamlit (app/main.py)
-def graph_router(text: str, target_agent: str | None):
+# Router gọi graph bên phía Streamlit (app/main.py) 
+# Ở layer cao nhất (trong test hoặc trong Streamlit) nhớ dùng asyncio.run(...) hay await graph_router(...).
+async def graph_router(text: str, target_agent: str | None):
     """
     - target_agent None  -> Auto (Host tự quyết).
     - target_agent "dev" -> ép Host route sang Dev, ...
@@ -63,5 +64,5 @@ def graph_router(text: str, target_agent: str | None):
         "text":  text,
         "forced": target_agent,   # truyền xuống để Host (Auto mode)/Target xử lý
     }
-    out = GRAPH.invoke(state)
+    out = await GRAPH.ainvoke(state)
     return out["answer"]
