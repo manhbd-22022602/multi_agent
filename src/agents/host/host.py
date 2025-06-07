@@ -1,4 +1,4 @@
-# agent/Host/host.py
+# agent/host/host.py
 from __future__ import annotations
 from configs.config_loader import AVAILABLE_AGENTS, llm_local, llm_api
 
@@ -12,65 +12,27 @@ from typing import Dict, Any, Optional, TypedDict, Literal
 from langgraph.graph import StateGraph, START, END
 from langchain.schema import SystemMessage, HumanMessage
 from pydantic import BaseModel, Field
-
 # Định nghĩa RoutingOutput để ép LLM trả về nhãn agent
 class RoutingOutput(BaseModel):
     label: str = Field(
         description="Agent ID cần gọi. Phải là một trong: 'pm', 'dev', 'qa', 'docu', 'report', 'none'. Nếu không phù hợp, trả về 'none'."
     )
 
-# Định nghĩa State cho Host Agent
-class HostState(TypedDict, total=False):
-    event:   Literal["chat"]
-    text:    str
-    forced:  Optional[str]
-    next:    Optional[str]
-    answer:  Optional[str]
-
 # HostAgent sub-graph
 class HostAgent:
     def __init__(self) -> None:
-        sg = StateGraph(HostState)
-
-        sg.add_node("rule_based", self._rule_based)
-        sg.add_node("llm_select", self._llm_select)
-        sg.add_node("finalize",   self._finalize)
-
-        sg.add_edge(START, "rule_based")
-
-        # RULE-BASED: nếu đã có next  ⟹ END, ngược lại ⟹ llm_select
-        sg.add_conditional_edges(
-            "rule_based",
-            lambda s: "exit" if "next" in s else "cont",
-            {"exit": END, "cont": "llm_select"},
-        )
-
-        # LLM-SELECT: nếu đã có next ⟹ END, ngược lại ⟹ finalize
-        sg.add_conditional_edges(
-            "llm_select",
-            lambda s: "exit" if "next" in s else "cont",
-            {"exit": END, "cont": "finalize"},
-        )
-
-        sg.add_edge("finalize", END)
-        self._graph = sg.compile()
-        
         self.AGENT_IDS = set(AVAILABLE_AGENTS.values())
 
-    # public entry
-    async def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        return await self._graph.ainvoke(state)
-
     # node implementations
-    def _rule_based(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    def rule_based(self, state: Dict[str, Any]) -> Dict[str, Any]:
         forced = state.get("forced")
-        return {"next": forced} if self._forced_is_valid(forced) else {}
+        return {"next": forced} if self.forced_is_valid(forced) else {}
 
-    async def _llm_select(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    async def llm_select(self, state: Dict[str, Any]) -> Dict[str, Any]:
         agent = await self._llm_route(state["text"])
         return {"next": agent} if agent else {}
 
-    async def _finalize(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    async def finalize(self, state: Dict[str, Any]) -> Dict[str, Any]:
         # Chỉ chạy khi KHÔNG có `next`
         """Gọi LLM để tự trả lời user nếu không xác định được Agent phù hợp."""
         if llm_api is None:
@@ -90,7 +52,7 @@ class HostAgent:
         }
     
     # helper methods
-    def _forced_is_valid(self, tag: Optional[str]) -> bool:
+    def forced_is_valid(self, tag: Optional[str]) -> bool:
         return (tag in self.AGENT_IDS) or (tag == "none")
 
     async def _llm_route(self, text: str, attempts=5) -> Optional[str]:
@@ -129,22 +91,14 @@ class HostAgent:
             try:
                 result: RoutingOutput = await structured_llm.ainvoke([system, user])
                 label = result.label.strip().lower()
-                logger.info(f"Prompt: {[system, user]} -> Result: {result}")
-                if self._forced_is_valid(label):
+                logger.info("Prompt: %s -> Result: %s", [system, user], result)
+                if self.forced_is_valid(label):
                     return label if label in self.AGENT_IDS else None
                 else:
-                    logger.info(f"[Host] Attempt {attempt+1}: Invalid label ->", label)
+                    logger.info("[Host] Attempt %d: Invalid label -> %s", attempt+1, label)
 
             except Exception as e:
-                logger.info(f"[Host] LLM routing failed at attempt {attempt+1}:", e)
+                logger.info("[Host] LLM routing failed at attempt %d: %s", attempt + 1, e)
                 return None
 
         return None
-
-# Hàm entry-point cho node “host” trong core graph
-_host_agent = HostAgent()
-async def run(input_data: Dict[str, Any]) -> Dict[str, Any]:
-    return await _host_agent.run(input_data)
-
-# export graph để LangGraph CLI detect
-graph = _host_agent._graph

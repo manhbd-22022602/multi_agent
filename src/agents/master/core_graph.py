@@ -3,7 +3,7 @@ from typing import TypedDict, Literal, Optional
 from langgraph.graph import StateGraph, START, END
 from agents.dev import developer
 from agents.docu import docu
-from agents.host import host
+from agents.host import graph as host
 from agents.pm import project_manager
 from agents.qa import qa
 from agents.report import report

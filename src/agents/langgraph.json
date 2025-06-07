@@ -1,7 +1,7 @@
 {
     "dockerfile_lines": [],
     "graphs": {
-      "host": "host/host.py:graph",
+      "host": "host/graph.py:graph",
       "master": "master/core_graph.py:graph"
     },
     "env": "../../.env",
