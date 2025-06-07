@@ -27,7 +27,9 @@ project/
 │
 ├── services/                     # Các dịch vụ phụ trợ (DB, API, xử lý I/O...)
 │   ├── __init__.py
-│   └── task_manager.py
+│   ├── task_manager.py
+│   ├── github_mcp.py             # Mã khởi tạo MCP + load tools GitHub
+│   └── atlassian_mcp.py          # Mã khởi tạo MCP + load tools Atlassian
 │
 ├── utils/                        # Tiện ích chung (formatting, validation, logs,...)
 │   ├── __init__.py
