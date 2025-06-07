@@ -1,6 +1,6 @@
 # app/main.py
 import streamlit as st
-from graph.build_graph import graph_router              # backend router
+from agents.graph.core_graph import graph_router              # backend router
 from configs.settings import AVAILABLE_AGENTS
 
 st.set_page_config(page_title="Multi-Agent Demo", layout="wide")
