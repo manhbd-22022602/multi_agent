@@ -6,3 +6,4 @@ AVAILABLE_AGENTS = {
     "Report Agent": "report_agent",
 }
 
+LLM = "gemini-2.0-flash"
