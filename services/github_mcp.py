@@ -2,9 +2,9 @@ import os, asyncio
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from langchain_mcp_adapters.tools import load_mcp_tools
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-load_dotenv("../.env")
+load_dotenv(find_dotenv())
 GITHUB_PAT = os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]
 
 # ------------- ASYNC -------------
