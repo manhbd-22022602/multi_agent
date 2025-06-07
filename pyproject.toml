@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=64.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multi_agent"
+version = "0.1.0"
+description = "LangGraph multi-agent system"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name="Bui Manh", email="bdm2k4@gmail.com" },
+]
+dependencies = [
+  "langchain_community",
+  "langgraph",
+  "python-dotenv",
+  "langgraph-checkpoint-mongodb",
+  "pymongo",
+  "langchain-mcp-adapters",
+  "click==7.1.2",
+  "langchain-google-genai",
+  "streamlit",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
