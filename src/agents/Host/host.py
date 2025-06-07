@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 # Định nghĩa RoutingOutput để ép LLM trả về nhãn agent
 class RoutingOutput(BaseModel):
     label: str = Field(
-        description="Agent ID cần gọi. Phải là một trong: 'pm', 'dev', 'qa', 'docu', 'report'. Nếu không phù hợp, trả về 'none'."
+        description="Agent ID cần gọi. Phải là một trong: 'pm', 'dev', 'qa', 'docu', 'report', 'none'. Nếu không phù hợp, trả về 'none'."
     )
 
 # Định nghĩa State cho Host Agent
@@ -91,7 +91,7 @@ class HostAgent:
     
     # helper methods
     def _forced_is_valid(self, tag: Optional[str]) -> bool:
-        return tag in [self.AGENT_IDS, 'none']
+        return (tag in self.AGENT_IDS) or (tag == "none")
 
     async def _llm_route(self, text: str, attempts=5) -> Optional[str]:
         if llm_local is None:
@@ -101,14 +101,24 @@ class HostAgent:
 
         system = SystemMessage(
             content=(
-                "Bạn là một mô-đun định tuyến trong hệ thống quản lý dự án IT. "
-                "Nhiệm vụ của bạn là đọc đầu vào của người dùng và phân loại nó về một trong các agent sau:\n\n"
-                "- pm: Quản lý dự án (Project Manager)\n"
-                "- dev: Lập trình viên (Developer)\n"
-                "- qa: Kiểm thử phần mềm (QA)\n"
-                "- docu: Viết tài liệu (Documentation)\n"
-                "- report: Báo cáo (Report)\n\n"
-                "Nếu không thể phân loại hoặc không có agent phù hợp, hãy trả về 'none'. "
+                "You are the “Routing Module” for an IT Project Management assistant. "
+                "Your job is to read a user’s free­form input and choose exactly one of these six labels:\n\n"
+                "- pm – Project Manager (task planning, prioritization, resource allocation)\n"
+                "- dev – Developer (writing code, technical design, debugging)\n"
+                "- qa – QA Engineer (test cases, quality checks, bug reports)\n"
+                "- docu – Documentation (writing specs, user guides, API docs)\n"
+                "- report – Reporting (status updates, metrics, summaries)\n"
+                "- none – Anything outside IT project management scope\n\n"
+                "Rules:\n\n"
+                "1. Only classify inputs that clearly belong to IT project management activities.\n" 
+                "2. If the question is general trivia, small talk, or any non-PM/Dev/QA/Docu/Report topic, return none.\n"
+                "3. Output must be valid JSON only, with exactly one field called `label`. Do not output any extra text.\n"
+                "4. Use lowercase labels exactly as shown.\n\n"
+
+                "Output format (no deviations!):\n\n" 
+                "```json"
+                "{'label':'<pm|dev|qa|docu|report|none>'}"
+                "```"
             )
         )
 
@@ -119,7 +129,7 @@ class HostAgent:
             try:
                 result: RoutingOutput = await structured_llm.ainvoke([system, user])
                 label = result.label.strip().lower()
-
+                logger.info(f"Prompt: {[system, user]} -> Result: {result}")
                 if self._forced_is_valid(label):
                     return label if label in self.AGENT_IDS else None
                 else:
@@ -135,3 +145,6 @@ class HostAgent:
 _host_agent = HostAgent()
 async def run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     return await _host_agent.run(input_data)
+
+# export graph để LangGraph CLI detect
+graph = _host_agent._graph
