@@ -66,3 +66,6 @@ async def graph_router(text: str, target_agent: str | None):
     }
     out = await GRAPH.ainvoke(state)
     return out["answer"]
+
+# export graph để LangGraph CLI detect
+graph = GRAPH
