@@ -1,0 +1,20 @@
+services:
+  github-mcp:
+    image: ghcr.io/sparfenyuk/mcp-proxy:latest   # dùng image chính thức
+    restart: unless-stopped
+    ports:
+      - "8406:8406"                # LangGraph sẽ gọi http://localhost:8406/mcp
+    # 1️⃣ Cho proxy quyền chạy `docker run`:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../.env:/opt/github.env:ro             # file chứa mọi biến GITHUB_*
+    # 2️⃣ Proxy cần biết các biến để substitute trước khi tạo container
+    env_file:
+      - ../.env
+    # 3️⃣ Lệnh proxy: mở port 8406 (Streamable HTTP) rồi spawn server stdio
+    command: >
+      --host 0.0.0.0 --port 8406 --transport streamablehttp --env-file /opt/github.env --
+      docker run -i --rm --env-file /opt/github.env \
+        -v /opt/github.env:/app/.env:ro \
+        mcp/github-mcp-server:latest \
+        --env_file /app/.env
