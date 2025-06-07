@@ -1,0 +1,12 @@
+available_agents:
+  PM Agent: pm
+  Dev Agent: dev
+  QA Agent: qa
+  Doc Agent: docu
+  Report Agent: report
+
+local_llm_url: http://localhost:11434
+
+local_llm_model: ollama/llama3.1:8b
+api_llm_model: google_genai/gemini-2.0-flash
+llm_temperature: 0
