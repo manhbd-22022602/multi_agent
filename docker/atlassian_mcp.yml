@@ -1,0 +1,12 @@
+services:
+  mcp-atlassian:
+    image: mcp/atlassian:latest
+    container_name: mcp-atlassian
+    env_file:
+      - mcp-atlassian.env
+    ports:
+      - "8405:80"
+    command: ["--transport", "streamable-http", "--port", "80", "-vv"]
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
