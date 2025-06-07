@@ -6,3 +6,4 @@ pymongo
 langchain-mcp-adapters
 click==7.1.2
 langchain-google-genai
+streamlit
