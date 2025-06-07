@@ -22,6 +22,7 @@ dependencies = [
   "click==7.1.2",
   "langchain-google-genai",
   "streamlit",
+  "langchain_ollama",
 ]
 
 [tool.setuptools]
