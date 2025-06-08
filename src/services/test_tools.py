@@ -24,8 +24,13 @@ llm = ChatGoogleGenerativeAI(
     max_retries=2,
 )
 
-tools = load_github_tools_sync() + load_atlassian_tools_sync()
-print("Loaded tools:", tools)
+tools = load_atlassian_tools_sync()
+# print("Loaded tools:", tools)
 agent = create_react_agent(llm, tools)
-response = agent.invoke({"messages": "Bạn có thể sử dụng các tools nào? Của các bộ công cụ nào?"})
-print(response)
+async def main():
+    response = await agent.ainvoke({"messages": "Project TP hiện có bao nhiêu issues? Hãy sử dụng công cụ và trả lời câu hỏi."})
+    print(response)
+    
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
