@@ -9,7 +9,7 @@ def _get_client() -> MultiServerMCPClient:
         {
             "atlassian": {
                 "transport": "streamable_http",
-                "url": "http://localhost:8405/mcp",
+                "url": "http://localhost:8405/mcp/",
             },
             # sau này thêm "github": {...}
         }
