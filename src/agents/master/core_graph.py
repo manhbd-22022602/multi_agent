@@ -1,5 +1,5 @@
 # graph/core_graph.py
-from typing import TypedDict, Literal, Optional
+from typing import TypedDict, Literal, List, Optional, Any, Dict
 from langgraph.graph import StateGraph, START, END
 from agents.dev import developer
 from agents.docu import docu
@@ -8,13 +8,35 @@ from agents.pm import graph as pm
 from agents.qa import qa
 from agents.report import report
 
+class Message(TypedDict):
+    role: Literal["system", "user", "assistant", "tool"]
+    content: str
+    # Với message do tool trả về, có thể đặt tên tool vào trường name
+    name: Optional[str]
+
 # Khai báo State
 class ChatState(TypedDict, total=False):
-    event:   Literal["chat"]
-    text:    str            # user prompt
-    forced:  Optional[str]  # "dev", "qa", ...
-    next:    Optional[str]  # host chọn route
-    answer:  Optional[str]  # câu trả lời cuối
+    # Loại sự kiện: chat từ user hoặc tool trả về kết quả
+    event: Literal["chat", "tool"]
+    # Lịch sử message (system/user/assistant/tool)
+    messages: List[Message]
+    # Khi user force chọn agent (dev/qa/pm/...)
+    forced: Optional[str]
+    # Agent tiếp theo do Host hoặc Supervisor decide
+    next: Optional[str]
+    # Câu trả lời cuối cùng sẽ trả về cho user
+    answer: Optional[str]
+    # Thông tin về tool đang gọi (nếu event là "tool")
+    tool: Optional[str]
+    # Tham số truyền vào tool
+    tool_input: Optional[Any]
+    # Kết quả trả về từ tool
+    tool_output: Optional[Any]
+    # Metadata tuỳ ý cho mở rộng (tracking, debug, ...)
+    metadata: Optional[Dict[str, Any]]
+    # TODO: Xoá text ở core và Host Agent, thay thế bằng messages
+    # Prompt của user
+    text: str
 
 # Build graph
 def build_core_graph():
@@ -63,9 +85,10 @@ async def graph_router(text: str, target_agent: str | None):
         "event": "chat",
         "text":  text,
         "forced": target_agent,   # truyền xuống để Host (Auto mode)/Target xử lý
+        "messages": [{"role": "user", "content": text}],
     }
     out = await GRAPH.ainvoke(state)
-    return out["answer"]
+    return out
 
 # export graph để LangGraph CLI detect
 graph = GRAPH
