@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from agents.dev import developer
 from agents.docu import docu
 from agents.host import graph as host
-from agents.pm import project_manager
+from agents.pm import graph as pm
 from agents.qa import qa
 from agents.report import report
 
@@ -22,7 +22,7 @@ def build_core_graph():
 
     # Node IDs phải trùng khoá trong ChatState["next"]
     g.add_node("host",   host.run)
-    # g.add_node("pm",     project_manager.run)
+    g.add_node("pm",     pm.run)
     # g.add_node("dev",    developer.run)
     # g.add_node("qa",     qa.run)
     # g.add_node("docu",   docu.run)
@@ -36,7 +36,7 @@ def build_core_graph():
         "host",
         lambda s: s.get("next", "end"),
         {
-            # "pm": "pm",
+            "pm": "pm",
             # "dev": "dev",
             # "qa": "qa",
             # "docu": "docu",

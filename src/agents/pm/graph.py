@@ -1,103 +1,96 @@
-from langgraph.graph import StateGraph, START, END
-from agents.Report import report
-from typing import Annotated, Any, Dict, TypedDict
-from langgraph.graph import Graph
-from langgraph.prebuilt import ToolNode
-from agents.PM.project_manager import ProjectManagerAgent, TaskInfo
+# agent/pm/graph.py
+from typing import Dict, Any
 
-# Define state types
-class PMState(TypedDict):
-    """State for PM Agent workflow"""
-    input: str  # Original user input
-    tasks: list[TaskInfo] | None  # Parsed tasks
-    current_task: TaskInfo | None  # Current task being processed
-    jira_issue: Dict[str, Any] | None  # Created Jira issue
-    status: str  # Current status
-    answer: str  # Final answer to user
+from langgraph.prebuilt import create_react_agent
+from langgraph_supervisor import create_supervisor
 
-# Initialize PM Agent
-pm_agent = ProjectManagerAgent()
+from configs.config_loader import llm_api as model
+from agents.pm.pm import PMAgent
 
-# Define nodes
-async def parse_tasks(state: PMState) -> PMState:
-    """Parse user input into tasks"""
-    tasks = await pm_agent._breakdown_into_tasks(state["input"])
-    return {**state, "tasks": tasks, "status": "parsed"}
+tools_map = PMAgent._load_tools()
+jira_read_tools = tools_map["jira_read"]
+jira_write_tools = tools_map["jira_write"]
+confluence_read_tools = tools_map["confluence_read"]
+confluence_write_tools = tools_map["confluence_write"]
+github_tools = tools_map["github"]
 
-async def create_jira_issue(state: PMState) -> PMState:
-    """Create Jira issue for current task"""
-    if not state["current_task"]:
-        return {**state, "status": "error", "answer": "Không có task để tạo"}
-    
-    jira_issue = await pm_agent._create_jira_issue(state["current_task"])
-    return {**state, "jira_issue": jira_issue, "status": "created"}
+jira_read_agent = create_react_agent(
+    name="jira_read_agent",
+    model=model,
+    tools=jira_read_tools,
+    prompt="""
+Bạn là chuyên gia đọc dữ liệu Jira. Chỉ thực hiện các thao tác đọc và không sửa đổi dữ liệu. 
+– KHÔNG hỏi lại người dùng. 
+– Tự động chọn và gọi tool phù hợp. 
+"""
+)
 
-async def dispatch_task(state: PMState) -> PMState:
-    """Dispatch task to appropriate agent"""
-    if not state["current_task"]:
-        return {**state, "status": "error", "answer": "Không có task để phân công"}
-    
-    await pm_agent._dispatch_task(state["current_task"])
-    return {**state, "status": "dispatched"}
+jira_write_agent = create_react_agent(
+    name="jira_write_agent",
+    model=model,
+    tools=jira_write_tools,
+    prompt="Bạn là chuyên gia ghi dữ liệu Jira. Chỉ thực hiện các thao tác tạo, cập nhật và xóa issue."
+)
 
-async def compose_reply(state: PMState) -> PMState:
-    """Compose final reply to user"""
-    if state["status"] == "error":
-        return state
-    
-    reply = (
-        f"Đã xử lý task: {state['current_task']['title']}\n"
-        f"Jira issue: {state['jira_issue']['key']}\n"
-        "Task đã được phân công cho agent phù hợp."
+confluence_read_agent = create_react_agent(
+    name="confluence_read_agent",
+    model=model,
+    tools=confluence_read_tools,
+    prompt="Bạn là chuyên gia đọc dữ liệu Confluence. Chỉ thực hiện các thao tác đọc trang và tìm kiếm."
+)
+
+confluence_write_agent = create_react_agent(
+    name="confluence_write_agent",
+    model=model,
+    tools=confluence_write_tools,
+    prompt="Bạn là chuyên gia ghi dữ liệu Confluence. Chỉ thực hiện các thao tác tạo, cập nhật, xóa trang và thêm bình luận."
+)
+
+github_agent = create_react_agent(
+    name="github_agent",
+    model=model,
+    tools=github_tools,
+    prompt="Bạn là chuyên gia thao tác GitHub. Chỉ thực hiện các thao tác liên quan đến repository và issue trên GitHub."
+)
+
+# fallback agent cho các câu hỏi chung
+self_answer_agent = create_react_agent(
+    name="self_answer_agent",
+    model=model,
+    tools=[],
+    prompt="Bạn là chuyên gia PM tổng hợp. Trả lời các câu hỏi chung không thuộc phạm vi Jira, Confluence hay GitHub."
+)
+
+# Tạo supervisor cho các sub-agent (PM Agent phân cấp)
+pm_agent = create_supervisor(
+    [
+        jira_read_agent,
+        jira_write_agent,
+        confluence_read_agent,
+        confluence_write_agent,
+        github_agent,
+        self_answer_agent,
+    ],
+    model=model,
+    supervisor_name="pm_supervisor",
+    prompt=(
+        "Bạn là PM Agent tổng hợp. Khi nhận yêu cầu từ người dùng, hãy phân tích mục tiêu và gọi đúng chuyên gia (Jira đọc, Jira ghi, Confluence đọc, Confluence ghi, GitHub hoặc trả lời chung)."
+        " Sau khi có kết quả từ sub-agent, tổng hợp và trả lời ngắn gọn rõ ràng bằng tiếng Việt."
+        "Phải đảm bảo có đủ thông tin để trả lời câu hỏi của người dùng, không được yêu cầu người dùng cung cấp thêm thông tin."
     )
-    return {**state, "answer": reply}
+).compile(name="pm_agent")
 
-# Define router
-def should_continue(state: PMState) -> str:
-    """Determine next node based on state"""
-    if state["status"] == "error":
-        return "compose_reply"
+graph = pm_agent
     
-    if not state["tasks"]:
-        return "compose_reply"
-    
-    if not state["current_task"]:
-        # Get next task
-        state["current_task"] = state["tasks"].pop(0)
-        return "create_jira_issue"
-    
-    if state["status"] == "created":
-        return "dispatch_task"
-    
-    if state["status"] == "dispatched":
-        if state["tasks"]:
-            state["current_task"] = state["tasks"].pop(0)
-            return "create_jira_issue"
-        return "compose_reply"
-    
-    return "compose_reply"
+# Hàm entry-point cho node “host” trong core_graph
+async def run(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    return await graph.ainvoke(input_data)
 
-# Build graph
-def build_pm_graph() -> Graph:
-    """Build PM Agent workflow graph"""
-    workflow = Graph()
-    
-    # Add nodes
-    workflow.add_node("parse_tasks", parse_tasks)
-    workflow.add_node("create_jira_issue", create_jira_issue)
-    workflow.add_node("dispatch_task", dispatch_task)
-    workflow.add_node("compose_reply", compose_reply)
-    
-    # Add edges
-    workflow.add_edge("parse_tasks", should_continue)
-    workflow.add_edge("create_jira_issue", should_continue)
-    workflow.add_edge("dispatch_task", should_continue)
-    workflow.add_edge("compose_reply", END)
-    
-    # Set entry point
-    workflow.set_entry_point("parse_tasks")
-    
-    return workflow
+# async def main():
+#     messages = await pm_agent.ainvoke({"messages": [{"role": "user", "content": "Project có key 'TP' hiện có bao nhiêu issue?"}]})
+#     for m in messages['messages']:
+#         m.pretty_print()
 
-# Export graph
-pm_graph = build_pm_graph()
+# if __name__ == "__main__":
+#     import asyncio
+#     asyncio.run(main())
