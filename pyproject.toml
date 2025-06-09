@@ -23,6 +23,7 @@ dependencies = [
   "langchain-google-genai",
   "streamlit",
   "langchain_ollama",
+  "langgraph-supervisor"
 ]
 
 [tool.setuptools]
