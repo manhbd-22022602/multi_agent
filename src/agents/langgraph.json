@@ -3,7 +3,8 @@
     "graphs": {
       "host": "host/graph.py:graph",
       "master": "master/core_graph.py:graph",
-      "pm": "pm/graph.py:graph"
+      "pm": "pm/graph.py:graph",
+      "test": "test_agent/test.py:graph"
     },
     "env": "../../.env",
     "python_version": "3.13",
