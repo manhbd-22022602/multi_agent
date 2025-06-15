@@ -32,3 +32,6 @@ def load_chat_model(fully_specified_name: str, temperature: float = 0) -> BaseCh
 # Load 2 model
 llm_local: BaseChatModel = load_chat_model(LOCAL_LLM_NAME)
 llm_api:   BaseChatModel = load_chat_model(API_LLM_NAME, TEMPERATURE)
+
+# Các biến cho QA Agent tool
+QODO_URL = _cfg["qodo_url"]
