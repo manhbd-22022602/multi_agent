@@ -47,16 +47,3 @@ Bạn là chuyên gia quản lý confluence.
 )
 
 graph = confluence_agent.compile(name="confluence_agent")
-    
-# Hàm entry-point cho node “host” trong core_graph
-async def run(input_data: Dict[str, Any]) -> Dict[str, Any]:
-    return await graph.ainvoke(input_data)
-
-# async def main():
-#     messages = await graph.ainvoke({"messages": [{"role": "user", "content": "Project có key 'TP' hiện có bao nhiêu issue?"}]})
-#     for m in messages['messages']:
-#         m.pretty_print()
-
-# if __name__ == "__main__":
-#     import asyncio
-#     asyncio.run(main())
