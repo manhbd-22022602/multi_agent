@@ -4,59 +4,19 @@ from typing import Dict, Any
 from langgraph.prebuilt import create_react_agent
 from langgraph_supervisor import create_supervisor
 
-from configs.config_loader import llm_api as model
-from agents.pm.pm import PMAgent
+from configs.config_loader import llm_api
+from agents.jira.graph import graph as jira_agent
+from agents.confluence.graph import graph as confluence_agent
 
-tools_map = PMAgent._load_tools()
-jira_read_tools = tools_map["jira_read"]
-jira_write_tools = tools_map["jira_write"]
-confluence_read_tools = tools_map["confluence_read"]
-confluence_write_tools = tools_map["confluence_write"]
-github_tools = tools_map["github"]
+# from agents.pm.pm import PMAgent
 
-jira_read_agent = create_react_agent(
-    name="jira_read_agent",
-    model=model,
-    tools=jira_read_tools,
-    prompt="""
-Bạn là chuyên gia đọc dữ liệu Jira. Chỉ thực hiện các thao tác đọc và không sửa đổi dữ liệu. 
-– KHÔNG hỏi lại người dùng. 
-– Tự động chọn và gọi tool phù hợp. 
-"""
-)
-
-jira_write_agent = create_react_agent(
-    name="jira_write_agent",
-    model=model,
-    tools=jira_write_tools,
-    prompt="Bạn là chuyên gia ghi dữ liệu Jira. Chỉ thực hiện các thao tác tạo, cập nhật và xóa issue."
-)
-
-confluence_read_agent = create_react_agent(
-    name="confluence_read_agent",
-    model=model,
-    tools=confluence_read_tools,
-    prompt="Bạn là chuyên gia đọc dữ liệu Confluence. Chỉ thực hiện các thao tác đọc trang và tìm kiếm."
-)
-
-confluence_write_agent = create_react_agent(
-    name="confluence_write_agent",
-    model=model,
-    tools=confluence_write_tools,
-    prompt="Bạn là chuyên gia ghi dữ liệu Confluence. Chỉ thực hiện các thao tác tạo, cập nhật, xóa trang và thêm bình luận."
-)
-
-github_agent = create_react_agent(
-    name="github_agent",
-    model=model,
-    tools=github_tools,
-    prompt="Bạn là chuyên gia thao tác GitHub. Chỉ thực hiện các thao tác liên quan đến repository và issue trên GitHub."
-)
+# tools_map = PMAgent._load_tools()
+# github_tools = tools_map["github"]
 
 # fallback agent cho các câu hỏi chung
 self_answer_agent = create_react_agent(
     name="self_answer_agent",
-    model=model,
+    model=llm_api,
     tools=[],
     prompt="Bạn là chuyên gia PM tổng hợp. Trả lời các câu hỏi chung không thuộc phạm vi Jira, Confluence hay GitHub."
 )
@@ -64,17 +24,14 @@ self_answer_agent = create_react_agent(
 # Tạo supervisor cho các sub-agent (PM Agent phân cấp)
 pm_agent = create_supervisor(
     [
-        jira_read_agent,
-        jira_write_agent,
-        confluence_read_agent,
-        confluence_write_agent,
-        github_agent,
+        jira_agent,
+        confluence_agent,
         self_answer_agent,
     ],
-    model=model,
+    model=llm_api,
     supervisor_name="pm_supervisor",
     prompt=(
-        "Bạn là PM Agent tổng hợp. Khi nhận yêu cầu từ người dùng, hãy phân tích mục tiêu và gọi đúng chuyên gia (Jira đọc, Jira ghi, Confluence đọc, Confluence ghi, GitHub hoặc trả lời chung)."
+        "Bạn là PM Agent tổng hợp. Khi nhận yêu cầu từ người dùng, hãy phân tích mục tiêu và gọi đúng chuyên gia (Jira, Confluence hoặc trả lời chung)."
         " Sau khi có kết quả từ sub-agent, tổng hợp và trả lời ngắn gọn rõ ràng bằng tiếng Việt."
         "Phải đảm bảo có đủ thông tin để trả lời câu hỏi của người dùng, không được yêu cầu người dùng cung cấp thêm thông tin."
     )
