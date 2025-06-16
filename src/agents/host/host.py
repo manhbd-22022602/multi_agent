@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 # Định nghĩa RoutingOutput để ép LLM trả về nhãn agent
 class RoutingOutput(BaseModel):
     label: str = Field(
-        description="Agent ID cần gọi. Phải là một trong: 'pm', 'dev', 'qa', 'docu', 'report', 'none'. Nếu không phù hợp, trả về 'none'."
+        description="Agent ID cần gọi. Phải là một trong: 'pm', 'qa', 'none'. Nếu không phù hợp, trả về 'none'."
     )
 
 # HostAgent sub-graph
@@ -29,7 +29,7 @@ class HostAgent:
         return {"next": forced} if self.forced_is_valid(forced) else {}
 
     async def llm_select(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        agent = await self._llm_route(state["text"])
+        agent = await self._llm_route(self._get_user_input(state))
         return {"next": agent} if agent else {}
 
     async def finalize(self, state: Dict[str, Any]) -> Dict[str, Any]:
@@ -43,7 +43,7 @@ class HostAgent:
         system = SystemMessage(
             content="Bạn là một trợ lý thân thiện. Hãy trả lời câu hỏi của người dùng một cách ngắn gọn, rõ ràng và hữu ích."
         )
-        user = HumanMessage(content=state["text"])
+        user = HumanMessage(content=self._get_user_input(state))
 
         response = await llm_api.ainvoke([system, user])
 
@@ -64,22 +64,19 @@ class HostAgent:
         system = SystemMessage(
             content=(
                 "You are the “Routing Module” for an IT Project Management assistant. "
-                "Your job is to read a user’s free­form input and choose exactly one of these six labels:\n\n"
+                "Your job is to read a user’s free­form input and choose exactly one of these three labels:\n\n"
                 "- pm – Project Manager (task planning, prioritization, resource allocation)\n"
-                "- dev – Developer (writing code, technical design, debugging)\n"
                 "- qa – QA Engineer (test cases, quality checks, bug reports)\n"
-                "- docu – Documentation (writing specs, user guides, API docs)\n"
-                "- report – Reporting (status updates, metrics, summaries)\n"
                 "- none – Anything outside IT project management scope\n\n"
                 "Rules:\n\n"
                 "1. Only classify inputs that clearly belong to IT project management activities.\n" 
-                "2. If the question is general trivia, small talk, or any non-PM/Dev/QA/Docu/Report topic, return none.\n"
+                "2. If the question is general trivia, small talk, or any non-PM/QA topic, return none.\n"
                 "3. Output must be valid JSON only, with exactly one field called `label`. Do not output any extra text.\n"
                 "4. Use lowercase labels exactly as shown.\n\n"
 
                 "Output format (no deviations!):\n\n" 
                 "```json"
-                "{'label':'<pm|dev|qa|docu|report|none>'}"
+                "{'label':'<pm|qa|none>'}"
                 "```"
             )
         )
@@ -102,3 +99,9 @@ class HostAgent:
                 return None
 
         return None
+    
+    def _get_user_input(self, state: Dict[str, Any]) -> str:
+        for msg in reversed(state["messages"]):
+            if isinstance(msg, HumanMessage):
+                return msg.content
+        return ""
