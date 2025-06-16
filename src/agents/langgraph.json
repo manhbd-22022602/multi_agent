@@ -4,6 +4,7 @@
       "host": "host/graph.py:graph",
       "master": "master/core_graph.py:graph",
       "pm": "pm/graph.py:graph",
+      "qa": "qa/graph.py:graph",
       "jira": "jira/graph.py:graph",
       "confluence": "confluence/graph.py:graph"
     },
