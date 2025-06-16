@@ -23,7 +23,11 @@ self_answer_agent = create_react_agent(
 
 # Tạo supervisor cho các sub-agent (PM Agent phân cấp)
 pm_agent = create_supervisor(
-    [
+    # bật ghi lại cặp (AIMessage, ToolMessage) khi supervisor chuyển quyền/agent con thực hiện xong trả về supervisor
+    add_handoff_messages=True,
+    add_handoff_back_messages=True,
+    output_mode="last_message",
+    agents=[
         jira_agent,
         confluence_agent,
         self_answer_agent,
