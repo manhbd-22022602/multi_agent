@@ -1,6 +1,6 @@
 # agent/host/graph.py
 from typing import Dict, Any
-from agents.host.state import HostState
+from agents.host.state import ChatState as HostState
 from agents.host.host import HostAgent
 from langgraph.graph import StateGraph, START, END
 
