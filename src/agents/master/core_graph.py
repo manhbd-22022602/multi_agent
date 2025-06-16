@@ -5,36 +5,7 @@ from agents.host import graph as host
 from agents.pm import graph as pm
 from agents.qa import graph as qa
 
-class Message(TypedDict):
-    role: Literal["system", "user", "assistant", "tool"]
-    content: str
-    # Với message do tool trả về, có thể đặt tên tool vào trường name
-    name: Optional[str]
-
-# Khai báo State
-class ChatState(TypedDict, total=False):
-    # Loại sự kiện: chat từ user hoặc tool trả về kết quả
-    event: Literal["chat", "tool"]
-    # Lịch sử message (system/user/assistant/tool)
-    messages: List[Message]
-    # Khi user force chọn agent (dev/qa/pm/...)
-    forced: Optional[str]
-    # Agent tiếp theo do Host hoặc Supervisor decide
-    next: Optional[str]
-    # Câu trả lời cuối cùng sẽ trả về cho user
-    answer: Optional[str]
-    # Thông tin về tool đang gọi (nếu event là "tool")
-    tool: Optional[str]
-    # Tham số truyền vào tool
-    tool_input: Optional[Any]
-    # Kết quả trả về từ tool
-    tool_output: Optional[Any]
-    # Metadata tuỳ ý cho mở rộng (tracking, debug, ...)
-    metadata: Optional[Dict[str, Any]]
-    # TODO: Xoá text ở core và Host Agent, thay thế bằng messages
-    # Prompt của user
-    text: str
-
+from agents.host.state import ChatState
 # Build graph
 def build_core_graph():
     g = StateGraph(ChatState)
