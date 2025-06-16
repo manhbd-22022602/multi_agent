@@ -1,36 +1,26 @@
-from typing import Dict, List, Any
-from langchain.agents import AgentExecutor
-from langchain.schema import AgentAction, AgentFinish
+# agent/qa/qa.py
+from __future__ import annotations
+import logging
+from langchain.tools import StructuredTool
+from services.qodo_cover_tool import create_unit_test, run_unit_test, call_api_endpoint
+
+logger = logging.getLogger(__name__)
+tools_cache: list[StructuredTool] = {}
 
 class QAAgent:
-    """Agent chịu trách nhiệm kiểm thử và đảm bảo chất lượng code"""
+    def __init__(self) -> None:
+        pass
     
-    def __init__(self):
-        self.name = "QA"
-        self.description = "Agent chịu trách nhiệm kiểm thử và đảm bảo chất lượng"
-    
-    async def run(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Xử lý input và trả về kết quả
-        
-        Args:
-            input_data: Dictionary chứa thông tin input
-            
-        Returns:
-            Dictionary chứa kết quả xử lý
-        """
-        # TODO: Implement logic xử lý
-        return {"status": "success", "message": "QA processed the request"}
-    
-    async def test_code(self, code: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Kiểm thử code
-        
-        Args:
-            code: Dictionary chứa code cần test
-            
-        Returns:
-            Dictionary chứa kết quả test
-        """
-        # TODO: Implement logic test
-        return {"status": "success", "test_results": [], "message": "Code tested successfully"} 
+    @staticmethod
+    def _load_tools() -> dict[str, list[StructuredTool]]:
+        global tools_cache
+        if tools_cache:
+            return tools_cache
+
+        tools_cache = [
+            create_unit_test,
+            run_unit_test,
+            call_api_endpoint
+        ]
+
+        return tools_cache
