@@ -1,12 +1,9 @@
 # graph/core_graph.py
 from typing import TypedDict, Literal, List, Optional, Any, Dict
 from langgraph.graph import StateGraph, START, END
-from agents.dev import developer
-from agents.docu import docu
 from agents.host import graph as host
 from agents.pm import graph as pm
-from agents.qa import qa
-from agents.report import report
+from agents.qa import graph as qa
 
 class Message(TypedDict):
     role: Literal["system", "user", "assistant", "tool"]
@@ -46,9 +43,7 @@ def build_core_graph():
     g.add_node("host",   host.run)
     g.add_node("pm",     pm.run)
     # g.add_node("dev",    developer.run)
-    # g.add_node("qa",     qa.run)
-    # g.add_node("docu",   docu.run)
-    # g.add_node("report", report.run)
+    g.add_node("qa",     qa.run)
 
     # Edges
     g.add_edge(START, "host")        # luôn bắt đầu ở Host
@@ -59,16 +54,13 @@ def build_core_graph():
         lambda s: s.get("next", "end"),
         {
             "pm": "pm",
-            # "dev": "dev",
-            # "qa": "qa",
-            # "docu": "docu",
-            # "report": "report",
+            "qa": "qa",
             "end": END,      # Host tự chốt câu trả lời
         },
     )
 
-    # for leaf in ["pm", "dev", "qa", "docu", "report"]:
-        # g.add_edge(leaf, END)
+    for leaf in ["pm", "qa",]:
+        g.add_edge(leaf, END)
 
     return g.compile()
 
