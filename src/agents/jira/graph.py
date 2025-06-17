@@ -47,27 +47,12 @@ You are a professional assistant specialized in creating, updating, and deleting
 """
 )
 
-self_answer_agent = create_react_agent(
-    name="self_answer_agent",
-    model=model,
-    tools=[],
-    prompt="""
-Bạn là một trợ lý chuyên nghiệp.
-
-– Chỉ tập trung vào việc tổng hợp thông tin đã có từ các agent khác (đặc biệt là `jira_read_agent`) để đưa ra câu trả lời.
-– Bỏ qua những đoạn chat không liên quan đến yêu cầu tổng hợp hoặc câu hỏi phân tích.
-
-Tận dụng mọi thông tin hiện có từ ngữ cảnh trước đó để trả lời trọn vẹn, chính xác và súc tích.
-"""
-)
-
 # Tạo supervisor cho các sub-agent (Jira write, Jira read)
 jira_agent = create_supervisor(
     supervisor_name="jira_agent",
     agents=[
         jira_read_agent,
-        jira_write_agent,
-        self_answer_agent
+        jira_write_agent
     ],
     model=model,
     prompt="""
