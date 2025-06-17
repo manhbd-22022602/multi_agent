@@ -16,19 +16,22 @@ class CreateUnitTestArgs(BaseModel):
     description=(
         "Calls Qodo Cover to generate unit tests for a given Python source file using test coverage analysis.\n\n"
         "Args:\n"
-        "    source_file_path (str): Path to the file needing test coverage.\n"
-        "    test_file_path (str): Path to save generated tests.\n"
-        "    coverage_xml_path (str): Path to the coverage.xml file.\n"
-        "    project_root (str): Root path of the project.\n\n"
+        "    source_file_path (str): Path to the file needing test.\n"
         "Returns:\n"
         "    str: JSON or YAML-formatted result of test generation, or error message if failed."
     ),
     args_schema=CreateUnitTestArgs.model_json_schema()
 )
-def create_unit_test(source_file_path: str, test_file_path: str, coverage_xml_path: str, project_root: str) -> str:
+def create_unit_test(source_file_path: str) -> str:
     """
     Gọi Qodo Cover để tạo unit test tự động cho một file mã nguồn cụ thể.
     """
+    project_root = os.path.dirname(os.path.dirname(source_file_path))
+    filename = os.path.basename(source_file_path)
+    
+    test_file_path = os.path.join(project_root, f"test_{filename}")
+    coverage_xml_path = os.path.join(project_root, "coverage.xml")
+
     payload = {
         "source_file_path": source_file_path,
         "test_file_path": test_file_path,
