@@ -20,13 +20,13 @@ class CreateUnitTestArgs(BaseModel):
         "Returns:\n"
         "    str: JSON or YAML-formatted result of test generation, or error message if failed."
     ),
-    args_schema=CreateUnitTestArgs.model_json_schema()
+    # args_schema=CreateUnitTestArgs.model_json_schema()
 )
 def create_unit_test(source_file_path: str) -> str:
     """
     Gọi Qodo Cover để tạo unit test tự động cho một file mã nguồn cụ thể.
     """
-    project_root = os.path.dirname(os.path.dirname(source_file_path))
+    project_root = os.path.dirname(source_file_path)
     filename = os.path.basename(source_file_path)
     
     test_file_path = os.path.join(project_root, f"test_{filename}")
