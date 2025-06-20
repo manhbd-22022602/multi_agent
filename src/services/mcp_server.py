@@ -3,7 +3,7 @@ from agents.jira.graph import graph as jira_agent
 from agents.confluence.graph import graph as confluence_agent
 from services.qodo_cover_tool import create_unit_test as _create_unit_test
 
-mcp = FastMCP("GitHub Copilot Agent Server", port=8408)
+mcp = FastMCP("GitHub Copilot Agent Server")
 
 # @mcp.tool(
 #     name="jira_agent_handler",
@@ -47,8 +47,8 @@ mcp = FastMCP("GitHub Copilot Agent Server", port=8408)
 
 CREATE_UNIT_TEST_DESC = _create_unit_test.description
 @mcp.tool(name="create_unit_test", description=CREATE_UNIT_TEST_DESC)
-async def create_unit_test(args: dict):
-    return _create_unit_test.invoke(args)
+async def create_unit_test(args: dict) -> str:
+    return _create_unit_test.invoke(input=args)
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    mcp.run(transport="streamable-http", port=8408)
