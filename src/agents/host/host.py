@@ -32,7 +32,7 @@ class HostAgent:
         agent = await self._llm_route(self._get_user_input(state))
         return {"next": agent} if agent else {}
 
-    async def finalize(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    async def self_answer(self, state: Dict[str, Any]) -> Dict[str, Any]:
         # Chỉ chạy khi KHÔNG có `next`
         """Gọi LLM để tự trả lời user nếu không xác định được Agent phù hợp."""
         if llm_api is None:

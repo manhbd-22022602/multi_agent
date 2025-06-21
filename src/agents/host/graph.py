@@ -10,7 +10,7 @@ def build_graph() -> StateGraph:
 
     sg.add_node("rule_based", host_agent.rule_based)
     sg.add_node("llm_select", host_agent.llm_select)
-    sg.add_node("finalize", host_agent.finalize)
+    sg.add_node("self_answer", host_agent.self_answer)
 
     sg.add_edge(START, "rule_based")
 
@@ -21,14 +21,14 @@ def build_graph() -> StateGraph:
         {"exit": END, "cont": "llm_select"},
     )
 
-    # LLM-SELECT: nếu đã có next ⟹ END, ngược lại ⟹ finalize
+    # LLM-SELECT: nếu đã có next ⟹ END, ngược lại ⟹ self_answer
     sg.add_conditional_edges(
         "llm_select",
         lambda s: "exit" if "next" in s else "cont",
-        {"exit": END, "cont": "finalize"},
+        {"exit": END, "cont": "self_answer"},
     )
     
-    sg.add_edge("finalize", END)
+    sg.add_edge("self_answer", END)
     return sg.compile()
 
 graph = build_graph()
